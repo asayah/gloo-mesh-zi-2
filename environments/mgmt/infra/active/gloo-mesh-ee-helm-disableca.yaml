@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gloo-mesh-enterprise-helm
+  namespace: argocd
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: gloo-mesh
+  project: default
+  source:
+    chart: gloo-mesh-enterprise
+    helm:
+      values: |
+        licenseKey: eyJhZGRPbnMiOltdLCJleHAiOjE2NjE5NjEzMDgsImlhdCI6MTY1OTM2OTMwOCwiayI6Ik55bm9VQSIsImx0IjoidHJpYWwiLCJwcm9kdWN0IjoiZ2xvby1tZXNoLWdhdGV3YXkifQ.r0YLls7-2EWTvg4W7Ih10DQp5C2zOYYbXunR-ce9tG4
+        mgmtClusterName: mgmt
+        glooMeshMgmtServer:
+          relay:
+            disableCa: true
+            disableCaCertGeneration: true
+            tlsSecret:
+              name: relay-server-tls-secret
+          ports:
+            healthcheck: 8091
+        glooMeshUi:
+          enabled: true
+          deploymentOverrides:
+            spec:
+              template:
+                metadata:
+                  annotations:
+                    sidecar.istio.io/inject: "true"
+                  labels:
+                    istio.io/rev: "1-13"
+    repoURL: https://storage.googleapis.com/gloo-mesh-enterprise/gloo-mesh-enterprise
+    targetRevision: 2.0.9
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: false
+  # ignore the self-signed certs that are being generated automatically    
+  ignoreDifferences:
+  - group: v1
+    kind: Secret
